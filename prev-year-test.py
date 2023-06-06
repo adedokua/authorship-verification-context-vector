@@ -1,4 +1,4 @@
-from new_code import generateFeatures
+from get_context_vector import generateFeatures
 import numpy as np
 # Test case 1
 text1 = "I love programming code code code code"
