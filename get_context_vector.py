@@ -1,94 +1,58 @@
-from collections import OrderedDict
+from collections import defaultdict, Counter
 import re
 import numpy as np
 
-#sorts dict by its values in ascending order
-def sort_dict_by_value(d, reverse=False):
-    return dict(sorted(d.items(), key=lambda x: x[1], reverse=reverse))
+def getFeatures(text1, text2, n):
+    # Remove non-alphabetic characters and make texts lowercase
+    text1 = re.sub(r'[^a-zA-Z ]+', '', text1.lower())
+    text2 = re.sub(r'[^a-zA-Z ]+', '', text2.lower())
+    
+    # Split texts into words
+    words1 = text1.split()
+    words2 = text2.split()
+    
+    # Count word frequencies in text1
+    freq = Counter(words1)
 
-def generateFeatures(text1, text2, n):
-    # Process Texts
-    processed_text1 = re.sub(r'[^\w\s]', '', text1)
-    processed_text2 = re.sub(r'[^\w\s]', '', text2)
+    # Words in text2 but not in text1, initialized with zero frequency
+    for word in words2:
+        if word not in freq:
+            freq[word] = 0
+    
+    # Sort by frequency and order of appearance
+    sorted_words = sorted(freq.keys(), key=lambda x: (-freq[x], words1.index(x) if x in words1 else float("inf")))
+    word_rank = {word: i+1 for i, word in enumerate(sorted_words)}
+    rank_word = {i+1: word for i, word in enumerate(sorted_words)}
+    
+    # Initialize context vectors
+    before, after = defaultdict(lambda: defaultdict(lambda: np.zeros(len(word_rank)))), defaultdict(lambda: defaultdict(lambda: np.zeros(len(word_rank))))
+    
+    # Create context vectors
+    for i, word in enumerate(words1):
+        target_rank = word_rank[word]
+        for j in range(1, n+1):
+            if i-j >= 0:
+                context_word = words1[i-j]
+                context_rank = word_rank[context_word]
+                before[target_rank][j][context_rank-1] += 1
+            if i+j < len(words1):
+                context_word = words1[i+j]
+                context_rank = word_rank[context_word]
+                after[target_rank][j][context_rank-1] += 1
+    
+    # Build context vector hash
+    context_vector_hash = {}
+    for rank in word_rank.values():
+        context_vector = []
+        for j in range(n, 0, -1):
+            context_vector.extend(before[rank][j])
+        for j in range(1, n+1):
+            context_vector.extend(after[rank][j])
+        context_vector_hash[rank] = np.array(context_vector) / float(len(words1))
+    
+    return context_vector_hash, freq, word_rank
 
-    # Clean strings and lowercase
-    pat = re.compile(r'[^a-zA-Z ]+')
-    processed_text1 = re.sub(pat, '', processed_text1).lower()
-    processed_text2 = re.sub(pat, '', processed_text2).lower()
-
-    # Tokenize texts
-    text1_tokens = processed_text1.split()
-    text2_tokens = processed_text2.split()
-
-    # Create hash of token frequencies in both texts
-    frequency_hash = OrderedDict()
-    for token in text1_tokens + text2_tokens:
-        if token in frequency_hash:
-            frequency_hash[token] += 1
-        else:
-            frequency_hash[token] = 1
-
-    # Sort hash by frequency
-    sorted_frequency_hash = sort_dict_by_value(frequency_hash, reverse=True)
-
-    # Create hash of token indexes in sorted_frequency_hash
-    index_hash = {}
-    for i, token in enumerate(sorted_frequency_hash.keys()):
-        index_hash[token] = i
-
-    # Create hash of token indexes and tokens
-    index_token_hash = {}
-    for i, token in enumerate(sorted_frequency_hash.keys()):
-        index_token_hash[i] = token
-
-    # Add missing tokens from corpus to frequency hash with 0 frequency
-    for token in set(text1_tokens + text2_tokens):
-        if token not in frequency_hash:
-            frequency_hash[token] = 0
-
-    # Create context vectors and ranking hash
-    context_vectors = []
-    ranking_hash = {}
-    for i, token in enumerate(text1_tokens):
-        before_context_vector = np.zeros(len(sorted_frequency_hash))
-        after_context_vector = np.zeros(len(sorted_frequency_hash))
-
-        for j in range(i - n, i):
-            if j >= 0:
-                before_token = text1_tokens[j]
-                if before_token in frequency_hash:
-                    before_context_vector[index_hash[before_token]] += 1
-
-        for j in range(i + 1, i + n + 1):
-            if j < len(text1_tokens):
-                after_token = text1_tokens[j]
-                if after_token in frequency_hash:
-                    after_context_vector[index_hash[after_token]] += 1
-
-        context_vector = np.concatenate((before_context_vector, after_context_vector))
-        context_vectors.append(context_vector)
-
-        ranking_hash[token] = sorted_frequency_hash[token]
-
-    for i, token in enumerate(text2_tokens):
-        before_context_vector = np.zeros(len(sorted_frequency_hash))
-        after_context_vector = np.zeros(len(sorted_frequency_hash))
-
-        for j in range(i - n, i):
-            if j >= 0:
-                before_token = text2_tokens[j]
-                if before_token in frequency_hash:
-                    before_context_vector[index_hash[before_token]] += 1
-
-        for j in range(i + 1, i + n + 1):
-            if j < len(text2_tokens):
-                after_token = text2_tokens[j]
-                if after_token in frequency_hash:
-                    after_context_vector[index_hash[after_token]] += 1
-
-        context_vector = np.concatenate((before_context_vector, after_context_vector))
-        context_vectors.append(context_vector)
-
-        ranking_hash[token] = sorted_frequency_hash[token]
-
-    return np.array(context_vectors), frequency_hash, index_token_hash
+text1 = "I love programming code code code code"
+text2 = "Programming is fun"
+n = 2
+print(getFeatures(text1, text2, n))

@@ -14,6 +14,7 @@ print(frequency_hash)
 print("Ranking Hash:")
 print(ranking_hash)
 print()
+
 # def test_generateFeatures():
 #     # Test case with two empty strings as input
 #     text1 = ""

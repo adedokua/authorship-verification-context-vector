@@ -27,9 +27,11 @@ def getFeatures(text1, text2, n):
     #hashFrequency stores frequencies of tokens in the text
     hashFrequency = OrderedDict()
     #stores the ranking of tokens based on their frequency. Keys are tokens, Values are the rankings
+   
     hashTokenRanking = {}
     #stores the reverse mapping of hashTokenRankinig, keys are rankings, Values are Tokens,
     hashRankingToken = {}
+   
     #stores total number of unique tokens in text1
     nbTokensInText1 = 0
 
@@ -150,8 +152,18 @@ def getFeatures(text1, text2, n):
                     contextVectorHash[rank] += [0] * len(tokens)
                 else:
                     contextVectorHash[rank] += after[rank][positivePos]
+    notNormalized = contextVectorHash.copy()
     for rank in hashTokenRanking.values():
         arrVector = np.asarray(contextVectorHash[rank])
         contextVectorHash[rank] = arrVector / float(nbTokensInText1)
         
-    return contextVectorHash, hashFrequency, hashTokenRanking
+    return notNormalized, hashFrequency, hashTokenRanking
+text1 = "I love programming code code code code"
+text2 = "Programming is fun"
+n=2
+print(getFeatures(text1,text2,n))
+
+#[2, 0, 1, 1, 0, 0, 3, 0, 0, 1, 0, 0, 3, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0]
+
+
+#{1 (target word rank):  {1 (window  position 1): [0,2,3,4] (co-occurence frequencies of all words at position 1, we know each word by the rnak!),1;[]}}
