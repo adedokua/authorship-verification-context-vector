@@ -6,14 +6,17 @@ use warnings;
 use File::Slurp;
 use Data::Dumper;
 use lib '/Users/dolapoadedokun/Desktop/Trinity/Thesis/perl/';
+use FindBin qw($RealBin);
+use lib "$RealBin/lib";
 use cvModule qw(getFeatures);
 use Math::Trig qw(acos);
 my $folder = 'data';
 my $n = 2;
+local $Data::Dumper::Terse = 1;
+local $Data::Dumper::Indent = 0;
 
 my @context_vectors;
 my $global_corpus = read_file("global/globalcorpus.txt");
-print($global_corpus);
 
 my @files = glob("data/*.txt");
 my @vectors;
@@ -64,26 +67,43 @@ sub magnitude {
     return sqrt($sum);
 }
 
+#helper function to append context vectors to one list
+sub append_arrays {
+    my %hash = @_;
+    my @result;
 
+    foreach my $key (sort {$a <=> $b} keys %hash) {
+        push @result, @{$hash{$key}};
+    }
+
+    return @result;
+}
 
 ###
 foreach my $file (@files) {
     my $text = read_file($file);
-    print($text);
-    #toDO
-    #implementatoin question, do I aapend all context vectors into one vector?
-    my $vector = getFeatures($text,  $global_corpus,$n);
-    print($vector)
-    #push @vectors, $vector;
+    #print($text);
+    
+    my %contextHash = getFeatures($text,  $global_corpus,$n);
+    #print(Dumper(%contextHash));
+    my @context_vector = append_arrays(%contextHash);
+    #print(Dumper(@context_vector), "\n");
+    push @vectors,\@context_vector;
 }
 
 
+print(Dumper(@vectors));
+my $length = scalar @vectors;
+
+print "The length of the vector is: $length\n";
 my @matrix;
 for (my $i=0; $i<@vectors; $i++) {
     for (my $j=0; $j<@vectors; $j++) {
-        $matrix[$i][$j] = compute_similarity($vectors[$i], $vectors[$j]);
+        $matrix[$i][$j] = compute_similarity($vectors[$i], $vectors[$j],"cosine");
     }
 }
+print("\n", "MATRIX");
+print(Dumper(@matrix));
 
 # print(Dumper(getFeatures($text1, $text2, $n)));
 

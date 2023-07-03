@@ -157,6 +157,7 @@ sub getFeatures {
         $contextVectorHash{$rank} = [map { $_ / $nbTokensInText1 } @{$contextVectorHash{$rank}}];
     }
     
-    return (\%notNormalized, \%hashFrequency, \%hashTokenRanking);
+    #return (\%notNormalized, \%hashFrequency, \%hashTokenRanking);
+    return  %contextVectorHash;
 }
-1;  #
+1;  
