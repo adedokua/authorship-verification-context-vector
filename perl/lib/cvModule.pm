@@ -61,7 +61,6 @@ sub getFeatures {
 
     my $sortedHashFreq = sort_hash_by_value(\%hashFrequency, 1);
 
-    print(Dumper($sortedHashFreq));
     my $i = 1;
     foreach my $token (keys %$sortedHashFreq) {
         $hashTokenRanking{$token} = $i;

@@ -34,18 +34,55 @@ sub compute_similarity {
 
 sub cosine_similarity {
     my ($vector1, $vector2) = @_;
+
+    # Check that inputs are defined and are array references
+    unless (defined $vector1 && ref $vector1 eq 'ARRAY' &&
+            defined $vector2 && ref $vector2 eq 'ARRAY') {
+        die "Both inputs must be array references.";
+    }
+
+    # Check that both arrays have the same number of elements
+    unless (@$vector1 == @$vector2) {
+        die "Both input arrays must have the same number of elements.";
+    }
+
+    # Calculate dot product and magnitudes
     my $dot_product = dot_product($vector1, $vector2);
     my $magnitude1 = magnitude($vector1);
     my $magnitude2 = magnitude($vector2);
+
+    # Check if magnitudes are zero (which would make the division undefined)
+    if ($magnitude1 == 0 || $magnitude2 == 0) {
+        die "At least one of the input vectors has zero magnitude, which is not allowed.";
+    }
+
     return $dot_product / ($magnitude1 * $magnitude2);
 }
 
 sub euclidean_similarity {
     my ($vector1, $vector2) = @_;
+    
+    # Check that inputs are defined and are array references
+    unless (defined $vector1 && ref $vector1 eq 'ARRAY' &&
+            defined $vector2 && ref $vector2 eq 'ARRAY') {
+        die "Both inputs must be array references.";
+    }
+    
+    # Check that both arrays have the same number of elements
+    unless (@$vector1 == @$vector2) {
+        die "Both input arrays must have the same number of elements.";
+    }
+    
     my $sum = 0;
-    for (my $i=0; $i<@$vector1; $i++) {
+    for (my $i = 0; $i < @$vector1; $i++) {
+        # Check that both array elements are defined
+        unless (defined $vector1->[$i] && defined $vector2->[$i]) {
+            die "Undefined element at index $i.";
+        }
+        
         $sum += ($vector1->[$i] - $vector2->[$i]) ** 2;
     }
+    
     return sqrt($sum);
 }
 
@@ -78,28 +115,38 @@ sub append_arrays {
 
     return @result;
 }
+#add all files to global corpus
+foreach my $file (@files) {
+    my $text = read_file($file);
+    #print($text);
+    $global_corpus .= $text;
+}
 
 ###
 foreach my $file (@files) {
     my $text = read_file($file);
     #print($text);
     
+    
     my %contextHash = getFeatures($text,  $global_corpus,$n);
     #print(Dumper(%contextHash));
     my @context_vector = append_arrays(%contextHash);
+    my $lengthContext = scalar @context_vector;
+    print "The length of the context vector is: $lengthContext\n";
+
     #print(Dumper(@context_vector), "\n");
     push @vectors,\@context_vector;
 }
 
 
-print(Dumper(@vectors));
+#print(Dumper(@vectors));
 my $length = scalar @vectors;
 
 print "The length of the vector is: $length\n";
 my @matrix;
 for (my $i=0; $i<@vectors; $i++) {
     for (my $j=0; $j<@vectors; $j++) {
-        $matrix[$i][$j] = compute_similarity($vectors[$i], $vectors[$j],"cosine");
+        $matrix[$i][$j] = compute_similarity($vectors[$i], $vectors[$j],"euclidean");
     }
 }
 print("\n", "MATRIX");
