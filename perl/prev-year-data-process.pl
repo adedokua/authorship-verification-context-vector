@@ -3,8 +3,8 @@ use JSON;
 use IO::Handle;
 
 sub createDataset {
-    open(my $json_file, '<', '../pan/pan-demo-smalll.jsonl') or die $!;
-    open(my $truth_file, '<', '../pan/pan-demo-small-truth.jsonl') or die $!;
+    open(my $json_file, '<', 'pan/pan-demo-smalll.jsonl') or die $!;
+    open(my $truth_file, '<', 'pan/pan-demo-small-truth.jsonl') or die $!;
     my @truth_list = <$truth_file>;
     open(my $cases, '>>', 'truthvalues.txt') or die $!;
     my @json_list = <$json_file>;
@@ -14,11 +14,11 @@ sub createDataset {
         my $js = $entry;
         my $result = decode_json($js);
         my @textPair = @{$result->{'pair'}};
-        open(my $f1, '>', "../data/$i.txt") or die $!;
+        open(my $f1, '>', "data/$i.txt") or die $!;
         print {$f1} "$textPair[0]";
         close($f1);
         $i++;
-        open(my $f2, '>', "../data/$i.txt") or die $!;
+        open(my $f2, '>', "data/$i.txt") or die $!;
         print {$f2} "$textPair[1]";
         close($f2);
         $i++;
