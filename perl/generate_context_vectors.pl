@@ -6,6 +6,15 @@ use Tie::IxHash;
 
 local $Data::Dumper::Terse = 1;
 
+sub get_ngrams {
+    my ($tokens, $n) = @_;
+    my @ngrams = ();
+    for my $i (0..$#{$tokens}-$n+1) {
+        push @ngrams, join(' ', @{$tokens}[$i..$i+$n-1]);
+    }
+    return \@ngrams;
+}
+
 sub sort_hash_by_value {
     my ($hash_ref, $reverse) = @_;
     tie my %sorted, 'Tie::IxHash';
@@ -19,7 +28,7 @@ sub sort_hash_by_value {
 }
 
 sub getFeatures {
-    my ($text1, $text2, $n) = @_;
+    my ($text1, $text2, $n, $ngrams) = @_;
     
     $text1 =~ s/[^\w\s]//g;
     $text2 =~ s/[^\w\s]//g;
@@ -36,8 +45,9 @@ sub getFeatures {
     tie my %hashRankingToken, 'Tie::IxHash';
 
     my $nbTokensInText1 = 0;
+    my @splitText1 = @{get_ngrams([split(' ', $text1)], $ngrams)};
+    my @splitText2 = @{get_ngrams([split(' ', $text2)], $ngrams)};
 
-    my @splitText1 = split(' ', $text1);
     foreach my $word (@splitText1) {
         $tokens{$word} = 1;
         if (exists $hashFrequency{$word}) {
@@ -46,9 +56,9 @@ sub getFeatures {
             $hashFrequency{$word} = 1;
         }
     }
-    $nbTokensInText1 = keys %tokens;
+    $nbTokensInText1 = @splitText1 - $n + 1;
 
-    my @splitText2 = split(' ', $text2);
+
     foreach my $word (@splitText2) {
         $tokens{$word} = 1;
         if (!exists $hashFrequency{$word}) {
@@ -158,7 +168,7 @@ sub getFeatures {
 }
 
 sub getFeaturesMFrequent {
-    my ($text1, $text2, $n, $m) = @_;
+    my ($text1, $text2, $n, $m, $ngrams) = @_;
     
     $text1 =~ s/[^\w\s]//g;
     $text2 =~ s/[^\w\s]//g;
@@ -175,8 +185,9 @@ sub getFeaturesMFrequent {
     tie my %hashRankingToken, 'Tie::IxHash';
 
     my $nbTokensInText1 = 0;
+    my @splitText1 = @{get_ngrams([split(' ', $text1)], $ngrams)};
+    my @splitText2 = @{get_ngrams([split(' ', $text2)], $ngrams)};
 
-    my @splitText1 = split(' ', $text1);
     foreach my $word (@splitText1) {
         $tokens{$word} = 1;
         if (exists $hashFrequency{$word}) {
@@ -185,9 +196,8 @@ sub getFeaturesMFrequent {
             $hashFrequency{$word} = 1;
         }
     }
-    $nbTokensInText1 = keys %tokens;
+    $nbTokensInText1 = @splitText1 - $n + 1;
 
-    my @splitText2 = split(' ', $text2);
     foreach my $word (@splitText2) {
         $tokens{$word} = 1;
         if (!exists $hashFrequency{$word}) {
@@ -335,7 +345,7 @@ sub printResults {
 
 
 sub getFeaturesSingleton {
-    my ($text1, $text2, $n) = @_;
+    my ($text1, $text2, $n, $ngrams) = @_;
     
     $text1 =~ s/[^\w\s]//g;
     $text2 =~ s/[^\w\s]//g;
@@ -353,7 +363,8 @@ sub getFeaturesSingleton {
     tie my %hashRankingToken, 'Tie::IxHash';
 
     my $nbTokensInText1 = 0;
-    my @splitText1 = split(' ', $text1);
+    my @splitText1 = @{get_ngrams([split(' ', $text1)], $ngrams)};
+    my @splitText2 = @{get_ngrams([split(' ', $text2)], $ngrams)};
 
     foreach my $word (@splitText1) {
         $text1Tokens{$word} = 1;
@@ -365,7 +376,6 @@ sub getFeaturesSingleton {
         }
     }
 
-    my @splitText2 = split(' ', $text2);
     foreach my $word (@splitText2) {
         $text2Tokens{$word} = 1;
         if (!exists $text1Tokens{$word} && !exists $tokens{$word}) {
@@ -486,8 +496,9 @@ my $text1 = "the cat sat on the mat";
 my $text2 = "the cat ate the rat";
 my $n = 2;
 my $m = 3;
+my $ngrams = 1;
 
-printResults(getFeaturesMFrequent($text1, $text2, $n, $m));
+printResults(getFeaturesMFrequent($text1, $text2, $n,$m,$ngrams));
 
 # my $text1 = "I love programming code code code code";
 # my $text2 = "Programming is fun";
